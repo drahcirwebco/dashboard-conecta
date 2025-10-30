@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDownIcon } from './icons/ChevronDownIcon';
+import type { CustomDateRange } from '../types';
 
 interface FilterBarProps {
   parceiroNames: string[];
@@ -8,40 +9,94 @@ interface FilterBarProps {
   onSelectionChange: (selected: string[]) => void;
   dateRange: string;
   onDateRangeChange: (range: string) => void;
+  customDateRange: CustomDateRange;
+  onCustomDateRangeChange: (range: CustomDateRange) => void;
 }
 
 const DateRangeSelector: React.FC<{
   selectedRange: string;
   onRangeChange: (range: string) => void;
-}> = ({ selectedRange, onRangeChange }) => {
+  customDateRange: CustomDateRange;
+  onCustomDateRangeChange: (range: CustomDateRange) => void;
+}> = ({ selectedRange, onRangeChange, customDateRange, onCustomDateRangeChange }) => {
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
+  
   const ranges = [
     { key: 'all', label: 'Período Completo' },
     { key: 'week', label: 'Esta Semana' },
     { key: 'month', label: 'Este Mês' },
+    { key: 'custom', label: 'Personalizado' },
   ];
 
+  const handleRangeChange = (key: string) => {
+    onRangeChange(key);
+    if (key === 'custom') {
+      setShowCustomPicker(true);
+    } else {
+      setShowCustomPicker(false);
+    }
+  };
+
+  const handleCustomDateChange = (field: 'startDate' | 'endDate', value: string) => {
+    const newRange = {
+      ...customDateRange,
+      [field]: value || null
+    };
+    onCustomDateRangeChange(newRange);
+  };
+
   return (
-    <div className="flex items-center space-x-1 bg-gray-100 dark:bg-dark-card p-1 rounded-lg shadow-inner">
-      {ranges.map(({ key, label }) => (
-        <button
-          key={key}
-          onClick={() => onRangeChange(key)}
-          className={`px-3 py-1 text-sm font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent focus:ring-offset-2 dark:focus:ring-offset-dark-bg
-            ${
-              selectedRange === key
-                ? 'bg-white dark:bg-gray-700 text-light-accent dark:text-dark-accent shadow'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600/50'
-            }
-          `}
-        >
-          {label}
-        </button>
-      ))}
+    <div className="space-y-2">
+      <div className="flex items-center space-x-1 bg-gray-100 dark:bg-dark-card p-1 rounded-lg shadow-inner">
+        {ranges.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => handleRangeChange(key)}
+            className={`px-3 py-1 text-sm font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent focus:ring-offset-2 dark:focus:ring-offset-dark-bg
+              ${
+                selectedRange === key
+                  ? 'bg-white dark:bg-gray-700 text-light-accent dark:text-dark-accent shadow'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600/50'
+              }
+            `}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      
+      {/* Seletor de data personalizado */}
+      {(selectedRange === 'custom' || showCustomPicker) && (
+        <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              De:
+            </label>
+            <input
+              type="date"
+              value={customDateRange.startDate || ''}
+              onChange={(e) => handleCustomDateChange('startDate', e.target.value)}
+              className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Até:
+            </label>
+            <input
+              type="date"
+              value={customDateRange.endDate || ''}
+              onChange={(e) => handleCustomDateChange('endDate', e.target.value)}
+              className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-const FilterBar: React.FC<FilterBarProps> = ({ parceiroNames, selectedParceiroNames, onSelectionChange, dateRange, onDateRangeChange }) => {
+const FilterBar: React.FC<FilterBarProps> = ({ parceiroNames, selectedParceiroNames, onSelectionChange, dateRange, onDateRangeChange, customDateRange, onCustomDateRangeChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -125,7 +180,12 @@ const FilterBar: React.FC<FilterBarProps> = ({ parceiroNames, selectedParceiroNa
             )}
         </div>
         
-        <DateRangeSelector selectedRange={dateRange} onRangeChange={onDateRangeChange} />
+        <DateRangeSelector 
+          selectedRange={dateRange} 
+          onRangeChange={onDateRangeChange}
+          customDateRange={customDateRange}
+          onCustomDateRangeChange={onCustomDateRangeChange}
+        />
     </div>
   );
 };

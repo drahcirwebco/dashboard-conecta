@@ -2,7 +2,7 @@
 
 import React from 'react';
 import type { Venda } from '../types';
-import { parseRobust } from '../../utils/dateUtils';
+import { parseRobust } from '../utils/dateUtils';
 
 interface RecentSalesTableProps {
   data: Venda[];

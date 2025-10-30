@@ -12,3 +12,8 @@ export interface Venda {
   nome_parceiro: string;
   item_nome?: string;
 }
+
+export interface CustomDateRange {
+  startDate: string | null; // YYYY-MM-DD format
+  endDate: string | null;   // YYYY-MM-DD format
+}

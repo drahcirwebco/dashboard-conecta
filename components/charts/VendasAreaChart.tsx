@@ -130,6 +130,29 @@ const VendasAreaChart: React.FC<VendasAreaChartProps> = ({ data, theme, dateRang
             });
     }
 
+    // Lógica para período personalizado: Agrega por dia dentro do período selecionado
+    if (dateRange === 'custom') {
+        const salesByDate: { [key: string]: number } = {};
+        data.forEach(venda => {
+            const date = parseRobust(venda.data_venda);
+            if (!date) return;
+            const dateKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+            if (!salesByDate[dateKey]) salesByDate[dateKey] = 0;
+            salesByDate[dateKey] += venda.valor_venda;
+        });
+
+        return Object.keys(salesByDate)
+            .sort()
+            .map(dateKey => {
+                const [year, month, day] = dateKey.split('-').map(Number);
+                const date = new Date(year, month - 1, day);
+                return {
+                    date: `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`,
+                    valor: salesByDate[dateKey]
+                };
+            });
+    }
+
     return [];
   }, [data, dateRange]);
 
@@ -139,7 +162,7 @@ const VendasAreaChart: React.FC<VendasAreaChartProps> = ({ data, theme, dateRang
 
   return (
     <div style={{ width: '100%', height: 350 }}>
-      <ResponsiveContainer>
+      <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData} margin={{ top: 30, right: 30, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">

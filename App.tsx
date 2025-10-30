@@ -2,12 +2,15 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchVendas, supabase } from './services/supabaseService';
-import type { Venda, User } from './types';
+import type { Venda, User, CustomDateRange } from './types';
 import Header from './components/Header';
 import KpiCard from './components/KpiCard';
+import ParceirosAtivosKpi from './components/ParceirosAtivosKpi';
 import VendasAreaChart from './components/charts/VendasAreaChart';
 import ParceirosBarChart from './components/charts/ParceirosBarChart';
 import PagamentoBarChart from './components/charts/PagamentoBarChart';
+import VendasPorTipoMaquina from './components/charts/VendasPorTipoMaquina';
+import TopMarcasBarChart from './components/charts/TopMarcasBarChart';
 import RecentSalesTable from './components/RecentSalesTable';
 import { useTheme } from './hooks/useTheme';
 import SaleDetailModal from './components/SaleDetailModal';
@@ -27,7 +30,21 @@ const App: React.FC = () => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [theme, toggleTheme] = useTheme();
   const [selectedParceiroNames, setSelectedParceiroNames] = useState<string[]>([]);
-  const [dateRange, setDateRange] = useState<string>('month'); // 'all', 'week', 'month'
+  const [dateRange, setDateRange] = useState<string>('all'); // 'all', 'week', 'month', 'custom'
+  const [customDateRange, setCustomDateRange] = useState<CustomDateRange>({
+    startDate: null,
+    endDate: null
+  });
+  
+  // Wrapper para mudança de período
+  const handleDateRangeChange = (newRange: string) => {
+    setDateRange(newRange);
+  };
+  
+  // Handler para mudança de data personalizada
+  const handleCustomDateRangeChange = (newRange: CustomDateRange) => {
+    setCustomDateRange(newRange);
+  };
   const [latestSale, setLatestSale] = useState<Venda | null>(null);
 
   useEffect(() => {
@@ -142,13 +159,35 @@ const App: React.FC = () => {
                     return cleanVendaDate >= startOfMonth;
                 }
 
+                if (dateRange === 'custom') {
+                    // Filtro personalizado usando as datas selecionadas
+                    if (customDateRange.startDate || customDateRange.endDate) {
+                        let isInRange = true;
+                        
+                        if (customDateRange.startDate) {
+                            const startDate = new Date(customDateRange.startDate + 'T00:00:00.000Z');
+                            isInRange = isInRange && cleanVendaDate >= startDate;
+                        }
+                        
+                        if (customDateRange.endDate) {
+                            const endDate = new Date(customDateRange.endDate + 'T23:59:59.999Z');
+                            isInRange = isInRange && cleanVendaDate <= endDate;
+                        }
+                        
+                        return isInRange;
+                    }
+                    // Se não há datas definidas, mostra todas as vendas
+                    return true;
+                }
+
+                // Para qualquer outro valor de dateRange, não filtra
                 return true;
             });
         }
         
         // Finalmente, ordena o resultado para garantir que esteja sempre em ordem cronológica decrescente.
         // Isso é crucial porque a ordenação do banco de dados em uma coluna de TEXTO não é confiável.
-        return [...filtered].sort((a, b) => {
+        const result = [...filtered].sort((a, b) => {
             const dateA = parseRobust(a.data_venda);
             const dateB = parseRobust(b.data_venda);
             
@@ -159,8 +198,11 @@ const App: React.FC = () => {
             
             return dateB.getTime() - dateA.getTime();
         });
+        
+        // Força uma nova referência do array para garantir re-renderização
+        return [...result];
 
-    }, [vendas, selectedParceiroNames, dateRange]);
+    }, [vendas, selectedParceiroNames, dateRange, customDateRange]);
   
   const topParceirosData = useMemo(() => {
     const salesByPartner = filteredVendas.reduce((acc, venda) => {
@@ -252,14 +294,17 @@ const App: React.FC = () => {
         selectedParceiroNames={selectedParceiroNames} 
         onSelectionChange={setSelectedParceiroNames}
         dateRange={dateRange}
-        onDateRangeChange={setDateRange}
+        onDateRangeChange={handleDateRangeChange}
+        customDateRange={customDateRange}
+        onCustomDateRangeChange={handleCustomDateRangeChange}
       />
       <main className="p-4 sm:p-6 lg:p-8 pt-0">
         {/* KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <KpiCard title="Valor Total" value={kpiData.totalRevenue} format="currency" />
           <KpiCard title="Ticket Médio" value={kpiData.avgTicket} format="currency" />
           <KpiCard title="Total de Vendas" value={kpiData.totalSales} />
+          <ParceirosAtivosKpi data={filteredVendas} dateRange={dateRange} />
         </div>
 
         {/* Gráficos e Tabelas */}
@@ -281,13 +326,35 @@ const App: React.FC = () => {
                 <PagamentoBarChart data={filteredVendas} theme={theme} />
             </div>
 
-            {/* --- Linha 3: Top Itens (Pleine largeur) --- */}
-            <div className="lg:col-span-3 bg-light-card dark:bg-dark-card p-6 rounded-xl shadow-md">
+            {/* --- Linha 3: Top Itens e Top Marcas --- */}
+            <div className="lg:col-span-2 bg-light-card dark:bg-dark-card p-6 rounded-xl shadow-md">
                 <h3 className="text-xl font-bold mb-4 text-light-text dark:text-dark-text">Top Itens Vendidos</h3>
                 <TopItensBarChart data={filteredVendas} theme={theme} />
             </div>
+            <div className="bg-light-card dark:bg-dark-card p-6 rounded-xl shadow-md">
+                <h3 className="text-xl font-bold mb-4 text-light-text dark:text-dark-text">
+                    Top Marcas ({filteredVendas.length} vendas)
+                </h3>
+                <TopMarcasBarChart 
+                    key={`marcas-${filteredVendas.length}-${dateRange}`}
+                    data={filteredVendas} 
+                    theme={theme} 
+                />
+            </div>
+
+            {/* --- Linha 4: Vendas por Tipo de Máquina (Pleine largeur) --- */}
+            <div className="lg:col-span-3 bg-light-card dark:bg-dark-card p-6 rounded-xl shadow-md">
+                <h3 className="text-xl font-bold mb-4 text-light-text dark:text-dark-text">
+                    Vendas por Tipo de Máquina ({filteredVendas.length} vendas)
+                </h3>
+                <VendasPorTipoMaquina 
+                    key={`tipos-${filteredVendas.length}-${dateRange}`}
+                    data={filteredVendas} 
+                    theme={theme} 
+                />
+            </div>
             
-            {/* --- Linha 4: Vendas Recentes (Pleine largeur) --- */}
+            {/* --- Linha 5: Vendas Recentes (Pleine largeur) --- */}
             <div className="lg:col-span-3 bg-light-card dark:bg-dark-card p-6 rounded-xl shadow-md overflow-x-auto">
                 <h3 className="text-xl font-bold mb-4 text-light-text dark:text-dark-text">Vendas Recentes</h3>
                 <RecentSalesTable data={filteredVendas.slice(0, 10)} onRowClick={setSelectedSale} />

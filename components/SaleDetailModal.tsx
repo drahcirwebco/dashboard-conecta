@@ -3,7 +3,7 @@
 import React from 'react';
 import type { Venda } from '../types';
 import { XIcon } from './icons/XIcon';
-import { parseRobust } from '../../utils/dateUtils';
+import { parseRobust } from '../utils/dateUtils';
 
 interface SaleDetailModalProps {
   sale: Venda;
