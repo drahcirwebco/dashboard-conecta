@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { fetchVendas, supabase } from './services/supabaseService';
+import { getVendas, supabase } from './services/supabaseService';
 import type { Venda, User, CustomDateRange } from './types';
 import Header from './components/Header';
 import KpiCard from './components/KpiCard';
@@ -68,8 +68,15 @@ const App: React.FC = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const vendasData = await fetchVendas();
-        setVendas(vendasData);
+        const vendasData = await getVendas();
+        
+        // Normaliza os nomes dos parceiros
+        const normalizedVendas = vendasData.map(venda => ({
+          ...venda,
+          nome_parceiro: venda.nome_parceiro ? normalizeParceiroName(venda.nome_parceiro) : venda.nome_parceiro
+        }));
+        
+        setVendas(normalizedVendas);
         setError(null);
       } catch (err) {
         let errorMessage = 'Falha ao carregar os dados. Verifique sua conexão e se as políticas de RLS (Row Level Security) estão habilitadas para leitura nas tabelas.';
@@ -93,8 +100,13 @@ const App: React.FC = () => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'vendas_parceiro' },
         (payload) => {
-          console.log('Nova venda recebida!', payload);
           const newSale = payload.new as Venda;
+          
+          // Normaliza o nome do parceiro se existir
+          if (newSale.nome_parceiro) {
+            newSale.nome_parceiro = normalizeParceiroName(newSale.nome_parceiro);
+          }
+          
           // Adiciona a nova venda ao topo da lista para atualização imediata da UI
           setVendas(currentVendas => [newSale, ...currentVendas]);
           // Define a venda mais recente para acionar a notificação
@@ -119,11 +131,34 @@ const App: React.FC = () => {
     }
   }, [latestSale]);
 
+    // Função para normalizar nomes de parceiros
+    const normalizeParceiroName = (name: string): string => {
+        return name
+            .toUpperCase() // Converte para maiúscula
+            .trim() // Remove espaços no início e fim
+            .replace(/\s+/g, ' ') // Substitui múltiplos espaços por um único espaço
+            // Normaliza acentos e caracteres especiais
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+            // Padronizações específicas comuns
+            .replace(/[ÇĆĈĊČ]/g, 'C')
+            .replace(/[ÀÁÂÃÄÅ]/g, 'A')
+            .replace(/[ÈÉÊË]/g, 'E')
+            .replace(/[ÌÍÎÏ]/g, 'I')
+            .replace(/[ÒÓÔÕÖ]/g, 'O')
+            .replace(/[ÙÚÛÜ]/g, 'U')
+            .replace(/[ÑŃŅŇŉ]/g, 'N')
+            // Remove caracteres especiais restantes exceto letras, números e espaços
+            .replace(/[^\w\s]/g, '')
+            .trim(); // Trim final para garantir
+    };
+
     const allParceiroNames = useMemo(() => {
         const partnerNames = vendas
           .map(v => v.nome_parceiro)
-          .filter((name): name is string => !!name); // Garante que não há nulos ou vazios
-        // FIX: Explicitly type `a` and `b` to `string` to resolve error where TypeScript infers them as `unknown`.
+          .filter((name): name is string => !!name) // Garante que não há nulos ou vazios
+          .map(name => normalizeParceiroName(name)); // Normaliza com função robusta
+        // Remove duplicatas e ordena
         return [...new Set(partnerNames)].sort((a: string, b: string) => a.localeCompare(b));
     }, [vendas]);
 
@@ -132,7 +167,12 @@ const App: React.FC = () => {
         // Primeiro, filtra por parceiro
         let filtered = selectedParceiroNames.length === 0
             ? vendas
-            : vendas.filter(venda => venda.nome_parceiro && selectedParceiroNames.includes(venda.nome_parceiro));
+            : vendas.filter(venda => {
+                if (!venda.nome_parceiro) return false;
+                // Normaliza o nome do parceiro da venda para comparação
+                const normalizedParceiroName = normalizeParceiroName(venda.nome_parceiro);
+                return selectedParceiroNames.includes(normalizedParceiroName);
+            });
 
         // Segundo, filtra por período
         if (dateRange !== 'all') {

@@ -44,20 +44,19 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const fetchVendas = async (): Promise<Venda[]> => {
-    console.log("Buscando vendas do Supabase...");
-
+export const getVendas = async (): Promise<Venda[]> => {
+  try {
     const { data, error } = await supabase
-        .from('vendas_parceiro')
-        .select('id, valor_venda, data_venda, detalhes_tipoPagamento, id_pipedrive, nome_parceiro, item_nome')
-        .order('data_venda', { ascending: false })
-        .limit(1000); // Limita a 1000 registros para otimizar a performance inicial
+      .from('vendas_parceiro')
+      .select('*')
+      .order('data_venda', { ascending: false });
 
     if (error) {
-        console.error('Erro ao buscar vendas:', error);
-        // Lança o erro para ser tratado no componente React
-        throw new Error(`Supabase error: ${error.message}`);
+      throw error;
     }
 
-    return (data as Venda[]) || [];
+    return data || [];
+  } catch (error) {
+    throw error;
+  }
 };
