@@ -148,10 +148,11 @@ const TopMarcasBarChart: React.FC<TopMarcasBarChartProps> = ({ data, theme }) =>
   };
 
   const isDark = theme === 'dark';
+  const accentColor = theme === 'dark' ? '#4299e1' : '#3182ce';
 
   return (
     <div>
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={400}>
         <BarChart
           data={chartData}
           margin={{
@@ -196,16 +197,14 @@ const TopMarcasBarChart: React.FC<TopMarcasBarChartProps> = ({ data, theme }) =>
             labelStyle={{ color: isDark ? '#f9fafb' : '#111827' }}
           />
           <Bar 
-            dataKey="quantidade" 
-            fill={isDark ? '#3b82f6' : '#2563eb'}
-            radius={[4, 4, 0, 0]}
+            dataKey="quantidade"
+            fill={accentColor}
+            cursor="pointer"
             onClick={handleBarClick}
-            style={{ cursor: 'pointer' }}
           >
             {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={isDark ? '#3b82f6' : '#2563eb'} />
-            ))}
-            <LabelList 
+              <Cell key={`cell-${index}`} fill={accentColor} />
+            ))}            <LabelList 
               dataKey="quantidade" 
               position="top" 
               style={{ 
@@ -220,11 +219,8 @@ const TopMarcasBarChart: React.FC<TopMarcasBarChartProps> = ({ data, theme }) =>
       
       {/* Descrição explicativa */}
       <div className="mt-3 text-center">
-        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-          * Este gráfico exibe apenas equipamentos de ar-condicionado. Produtos não relacionados a climatização foram excluídos da visualização.
-        </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-          Clique nas barras para ver detalhes das vendas
+        <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+          * Apenas equipamentos de ar-condicionado. Clique nas barras para detalhes.
         </p>
       </div>
 

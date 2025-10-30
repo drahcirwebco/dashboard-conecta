@@ -124,17 +124,18 @@ const VendasPorTipoMaquina: React.FC<VendasPorTipoMaquinaProps> = ({ data, theme
   };
 
   const isDark = theme === 'dark';
+  const accentColor = theme === 'dark' ? '#4299e1' : '#3182ce';
 
   return (
     <div>
-      <ResponsiveContainer width="100%" height={400}>
+      <ResponsiveContainer width="100%" height={350}>
         <BarChart
           data={chartData}
           margin={{
             top: 20,
-            right: 30,
+            right: 50,
             left: 20,
-            bottom: 5,
+            bottom: 60,
           }}
         >
           <CartesianGrid 
@@ -170,13 +171,13 @@ const VendasPorTipoMaquina: React.FC<VendasPorTipoMaquinaProps> = ({ data, theme
           />
           <Bar 
             dataKey="quantidade" 
-            fill={isDark ? '#3b82f6' : '#2563eb'}
+            fill={accentColor}
             radius={[4, 4, 0, 0]}
             onClick={handleBarClick}
             style={{ cursor: 'pointer' }}
           >
             {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={isDark ? '#3b82f6' : '#2563eb'} />
+              <Cell key={`cell-${index}`} fill={accentColor} />
             ))}
             <LabelList 
               dataKey="quantidade" 
@@ -193,11 +194,8 @@ const VendasPorTipoMaquina: React.FC<VendasPorTipoMaquinaProps> = ({ data, theme
       
       {/* Descrição explicativa */}
       <div className="mt-3 text-center">
-        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-          * Este gráfico exibe apenas equipamentos de ar-condicionado. Produtos não relacionados a climatização foram excluídos da visualização.
-        </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-          Clique nas barras para ver detalhes das vendas
+        <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+          * Apenas equipamentos de ar-condicionado. Clique nas barras para detalhes.
         </p>
       </div>
 

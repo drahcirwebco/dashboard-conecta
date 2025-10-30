@@ -367,11 +367,14 @@ const App: React.FC = () => {
             </div>
 
             {/* --- Linha 3: Top Itens e Top Marcas --- */}
-            <div className="lg:col-span-2 bg-light-card dark:bg-dark-card p-6 rounded-xl shadow-md">
+            {/* --- Linha 3: Top Itens Vendidos (largura total) --- */}
+            <div className="lg:col-span-3 bg-light-card dark:bg-dark-card p-6 rounded-xl shadow-md">
                 <h3 className="text-xl font-bold mb-4 text-light-text dark:text-dark-text">Top Itens Vendidos</h3>
                 <TopItensBarChart data={filteredVendas} theme={theme} />
             </div>
-            <div className="bg-light-card dark:bg-dark-card p-6 rounded-xl shadow-md">
+
+            {/* --- Linha 4: Top Marcas (2 colunas) e Vendas por Tipo de Máquina (1 coluna) --- */}
+            <div className="lg:col-span-2 bg-light-card dark:bg-dark-card p-6 rounded-xl shadow-md">
                 <h3 className="text-xl font-bold mb-4 text-light-text dark:text-dark-text">
                     Top Marcas ({filteredVendas.length} vendas)
                 </h3>
@@ -381,9 +384,7 @@ const App: React.FC = () => {
                     theme={theme} 
                 />
             </div>
-
-            {/* --- Linha 4: Vendas por Tipo de Máquina (Pleine largeur) --- */}
-            <div className="lg:col-span-3 bg-light-card dark:bg-dark-card p-6 rounded-xl shadow-md">
+            <div className="bg-light-card dark:bg-dark-card p-6 rounded-xl shadow-md">
                 <h3 className="text-xl font-bold mb-4 text-light-text dark:text-dark-text">
                     Vendas por Tipo de Máquina ({filteredVendas.length} vendas)
                 </h3>
