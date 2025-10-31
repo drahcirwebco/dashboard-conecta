@@ -157,24 +157,32 @@ const App: React.FC = () => {
         const partnerNames = vendas
           .map(v => v.nome_parceiro)
           .filter((name): name is string => !!name) // Garante que não há nulos ou vazios
-          .map(name => normalizeParceiroName(name)); // Normaliza com função robusta
+          .map(name => normalizeParceiroName(name)) // Normaliza com função robusta
+          .filter(name => name !== 'WEBCO PECAS'); // Exclui WEBCO PECAS da lista de parceiros
         // Remove duplicatas e ordena
         return [...new Set(partnerNames)].sort((a: string, b: string) => a.localeCompare(b));
     }, [vendas]);
 
 
     const filteredVendas = useMemo(() => {
-        // Primeiro, filtra por parceiro
-        let filtered = selectedParceiroNames.length === 0
-            ? vendas
-            : vendas.filter(venda => {
+        // Primeiro, exclui parceiro WEBCO PECAS de toda análise
+        let filtered = vendas.filter(venda => {
+            if (!venda.nome_parceiro) return true;
+            const normalizedParceiroName = normalizeParceiroName(venda.nome_parceiro);
+            return normalizedParceiroName !== 'WEBCO PECAS';
+        });
+
+        // Segundo, filtra por parceiro selecionado
+        filtered = selectedParceiroNames.length === 0
+            ? filtered
+            : filtered.filter(venda => {
                 if (!venda.nome_parceiro) return false;
                 // Normaliza o nome do parceiro da venda para comparação
                 const normalizedParceiroName = normalizeParceiroName(venda.nome_parceiro);
                 return selectedParceiroNames.includes(normalizedParceiroName);
             });
 
-        // Segundo, filtra por período
+        // Terceiro, filtra por período
         if (dateRange !== 'all') {
             const now = new Date();
             const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
