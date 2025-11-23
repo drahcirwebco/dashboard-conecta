@@ -55,6 +55,32 @@ export const getVendas = async (): Promise<Venda[]> => {
       throw error;
     }
 
+    // Log para diagnóstico - mostrar vendas com parceiro vazio
+    if (data) {
+      const vendasSemParceiro = data.filter(v => !v.nome_parceiro || v.nome_parceiro.trim() === '');
+      if (vendasSemParceiro.length > 0) {
+        console.warn(`⚠️ Encontradas ${vendasSemParceiro.length} vendas SEM nome de parceiro:`);
+        console.table(vendasSemParceiro.map(v => ({
+          id: v.id,
+          data_venda: v.data_venda,
+          valor_venda: v.valor_venda,
+          nome_parceiro: v.nome_parceiro || '(vazio)',
+          detalhes_tipoPagamento: v.detalhes_tipoPagamento,
+          id_pipedrive: v.id_pipedrive
+        })));
+        
+        // Copia um JSON para facilitar análise
+        const jsonVendas = JSON.stringify(vendasSemParceiro.map(v => ({
+          id: v.id,
+          data: v.data_venda,
+          valor: v.valor_venda,
+          pagamento: v.detalhes_tipoPagamento,
+          pipedrive: v.id_pipedrive
+        })), null, 2);
+        console.log('JSON das vendas sem parceiro para análise:', jsonVendas);
+      }
+    }
+
     return data || [];
   } catch (error) {
     throw error;

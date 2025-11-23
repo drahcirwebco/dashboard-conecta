@@ -309,9 +309,22 @@ const App: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text">
-        <div className="text-2xl font-semibold">Carregando Dashboard...</div>
+        <div className="text-2xl font-semibold">Carregando dados...</div>
       </div>
     );
+  }
+
+  // Debug: Mostrar vendas sem parceiro
+  const vendasSemParceiro = vendas.filter(v => !v.nome_parceiro || v.nome_parceiro.trim() === '');
+  if (vendasSemParceiro.length > 0 && user) {
+    console.log('=== VENDAS SEM PARCEIRO ===');
+    console.table(vendasSemParceiro.map(v => ({
+      id: v.id,
+      data: v.data_venda,
+      valor: `R$ ${v.valor_venda.toFixed(2)}`,
+      pagamento: v.detalhes_tipoPagamento,
+      pipedrive_id: v.id_pipedrive
+    })));
   }
 
   if (error) {
